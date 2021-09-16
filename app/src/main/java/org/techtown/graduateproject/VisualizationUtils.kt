@@ -27,6 +27,7 @@ object VisualizationUtils {
         Pair(BodyPart.RIGHT_KNEE, BodyPart.RIGHT_ANKLE)
     )
 
+
     // Draw line and point indicate body pose
     fun drawBodyKeypoints(input: Bitmap, person: Person): Bitmap {
         val paintCircle = Paint().apply {

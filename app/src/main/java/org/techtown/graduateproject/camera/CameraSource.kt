@@ -17,6 +17,7 @@ import android.util.Log
 import android.view.Surface
 import android.view.SurfaceView
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.techtown.graduateproject.EvaluateSquartUtils
 import org.techtown.graduateproject.VisualizationUtils
 import org.techtown.graduateproject.YuvToRgbConverter
 import org.techtown.graduateproject.data.Person
@@ -25,6 +26,7 @@ import org.techtown.graduateproject.ml.PoseDetector
 import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.*
 
 class CameraSource(
     private val surfaceView: SurfaceView,
@@ -36,7 +38,7 @@ class CameraSource(
         private const val PREVIEW_HEIGHT = 480
 
         /** Threshold for confidence score. */
-        private const val MIN_CONFIDENCE = .2f
+        private const val MIN_CONFIDENCE = .4f
         private const val TAG = "Camera Source"
     }
 
@@ -72,6 +74,10 @@ class CameraSource(
     /** [Handler] corresponding to [imageReaderThread] */
     private var imageReaderHandler: Handler? = null
     private var cameraId: String = ""
+
+    /** Squart 관련 Coroutine */
+    private var squartJob : Job? = null
+    private var squartPerson : Person? = null
 
     suspend fun initCamera() {
         camera = openCamera(cameraManager, cameraId)
@@ -231,6 +237,7 @@ class CameraSource(
             // send fps to view
             listener?.onFPSListener(framesPerSecond)
         }
+        /* 이 listener를 조작해서 isStanding, isLower, isCorrect, isGoingUp 등의 상태를 조절해야...*/
         listener?.onDetectedInfo(person?.score, classificationResult)
         person?.let {
             visualize(it, bitmap)
@@ -242,6 +249,13 @@ class CameraSource(
 
         if (person.score > MIN_CONFIDENCE) {
             outputBitmap = VisualizationUtils.drawBodyKeypoints(bitmap, person)
+            squartPerson = person
+            if(squartJob == null) squartJob = updatePose()
+        }
+        else{
+            squartJob?.cancel()
+            squartJob = null
+            squartPerson = null
         }
 
         val holder = surfaceView.holder
@@ -291,5 +305,21 @@ class CameraSource(
         fun onFPSListener(fps: Int)
 
         fun onDetectedInfo(personScore: Float?, poseLabels: List<Pair<String, Float>>?)
+    }
+
+    private fun updatePose(): Job {
+        return CoroutineScope(Dispatchers.IO).launch {
+
+            var standFlag = false
+            while (true) {
+                if(squartPerson == null) break
+                if(EvaluateSquartUtils.isStanding(squartPerson!!)){
+                    if(!standFlag) standFlag = true
+                    else Log.d("UpdatePose", "isStanding!")
+                }
+                else standFlag = false
+                delay(500)
+            }
+        }
     }
 }
