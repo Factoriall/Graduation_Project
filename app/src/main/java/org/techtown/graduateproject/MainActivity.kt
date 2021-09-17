@@ -59,16 +59,8 @@ class MainActivity : AppCompatActivity() {
     /** Default device is GPU */
     private var device = Device.CPU
 
-    private lateinit var tvScore: TextView
-    private lateinit var tvFPS: TextView
-    private lateinit var spnDevice: Spinner
-    private lateinit var spnModel: Spinner
-    private lateinit var tvClassificationValue1: TextView
-    private lateinit var tvClassificationValue2: TextView
-    private lateinit var tvClassificationValue3: TextView
-    private lateinit var swClassification: SwitchCompat
+    private lateinit var statusText: TextView
     private var cameraSource: CameraSource? = null
-    private var isClassifyPose = false
     private val requestPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
@@ -87,55 +79,17 @@ class MainActivity : AppCompatActivity() {
                     .show(supportFragmentManager, FRAGMENT_DIALOG)
             }
         }
-    private var changeModelListener = object : AdapterView.OnItemSelectedListener {
-        override fun onNothingSelected(parent: AdapterView<*>?) {
-            // do nothing
-        }
 
-        override fun onItemSelected(
-            parent: AdapterView<*>?,
-            view: View?,
-            position: Int,
-            id: Long
-        ) {
-            changeModel(position)
-        }
-    }
 
-    private var changeDeviceListener = object : AdapterView.OnItemSelectedListener {
-        override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-            changeDevice(position)
-        }
-
-        override fun onNothingSelected(parent: AdapterView<*>?) {
-            // do nothing
-        }
-    }
-
-    private var setClassificationListener =
-        CompoundButton.OnCheckedChangeListener { _, isChecked ->
-            showClassificationInfo(isChecked)
-            isClassifyPose = isChecked
-            isPoseClassifier()
-        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_camera)
         // keep screen on while app is running
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        tvScore = findViewById(R.id.tvScore)
-        tvFPS = findViewById(R.id.tvFps)
-        spnModel = findViewById(R.id.spnModel)
-        spnDevice = findViewById(R.id.spnDevice)
         surfaceView = findViewById(R.id.surfaceView)
-        tvClassificationValue1 = findViewById(R.id.tvClassificationValue1)
-        tvClassificationValue2 = findViewById(R.id.tvClassificationValue2)
-        tvClassificationValue3 = findViewById(R.id.tvClassificationValue3)
-        swClassification = findViewById(R.id.swPoseClassification)
-        initSpinner()
-        spnModel.setSelection(modelPos)
-        swClassification.setOnCheckedChangeListener(setClassificationListener)
+        statusText = findViewById(R.id.statusText)
+
         if (!isCameraPermissionGranted()) {
             requestPermission()
         }
@@ -172,35 +126,15 @@ class MainActivity : AppCompatActivity() {
             if (cameraSource == null) {
                 cameraSource =
                     CameraSource(surfaceView, object : CameraSource.CameraSourceListener {
-                        override fun onFPSListener(fps: Int) {
-                            tvFPS.text = getString(R.string.tfe_pe_tv_fps, fps)
-                        }
 
-                        override fun onDetectedInfo(
-                            personScore: Float?,
-                            poseLabels: List<Pair<String, Float>>?
-                        ) {
-                            tvScore.text = getString(R.string.tfe_pe_tv_score, personScore ?: 0f)
-                            poseLabels?.sortedByDescending { it.second }?.let {
-                                tvClassificationValue1.text = getString(
-                                    R.string.tfe_pe_tv_classification_value,
-                                    convertPoseLabels(if (it.isNotEmpty()) it[0] else null)
-                                )
-                                tvClassificationValue2.text = getString(
-                                    R.string.tfe_pe_tv_classification_value,
-                                    convertPoseLabels(if (it.size >= 2) it[1] else null)
-                                )
-                                tvClassificationValue3.text = getString(
-                                    R.string.tfe_pe_tv_classification_value,
-                                    convertPoseLabels(if (it.size >= 3) it[2] else null)
-                                )
-                            }
+
+                        override fun onDetectPose(s: String){
+                            statusText.text = s
                         }
 
                     }).apply {
                         prepareCamera()
                     }
-                isPoseClassifier()
                 lifecycleScope.launch(Dispatchers.Main) {
                     cameraSource?.initCamera()
                 }
@@ -214,35 +148,6 @@ class MainActivity : AppCompatActivity() {
         return "${pair.first} (${String.format("%.2f", pair.second)})"
     }
 
-    private fun isPoseClassifier() {
-        cameraSource?.setClassifier(if (isClassifyPose) PoseClassifier.create(this) else null)
-    }
-
-    // Init spinner that user can choose model and device they want.
-    private fun initSpinner() {
-        ArrayAdapter.createFromResource(
-            this,
-            R.array.tfe_pe_models_array,
-            android.R.layout.simple_spinner_item
-        ).also { adapter ->
-            // Specify the layout to use when the list of choices appears
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            // Apply the adapter to the spinner
-            spnModel.adapter = adapter
-            spnModel.onItemSelectedListener = changeModelListener
-        }
-
-        ArrayAdapter.createFromResource(
-            this,
-            R.array.tfe_pe_device_name, android.R.layout.simple_spinner_item
-        ).also { adaper ->
-            adaper.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-
-            spnDevice.adapter = adaper
-            spnDevice.onItemSelectedListener = changeDeviceListener
-        }
-    }
-
     // change model when app is running
     private fun changeModel(position: Int) {
         if (modelPos == position) return
@@ -250,38 +155,9 @@ class MainActivity : AppCompatActivity() {
         createPoseEstimator()
     }
 
-    // change device type when app is running
-    private fun changeDevice(position: Int) {
-        val targetDevice = when (position) {
-            0 -> Device.CPU
-            1 -> Device.GPU
-            else -> Device.NNAPI
-        }
-        if (device == targetDevice) return
-        device = targetDevice
-        createPoseEstimator()
-
-    }
 
     private fun createPoseEstimator() {
-        val poseDetector = when (modelPos) {
-            0 -> {
-                MoveNet.create(this, device)
-            }
-            1 -> {
-                MoveNet.create(this, device, ModelType.Thunder)
-            }
-            else -> {
-                PoseNet.create(this, device)
-            }
-        }
-        cameraSource?.setDetector(poseDetector)
-    }
-
-    private fun showClassificationInfo(isChecked: Boolean) {
-        tvClassificationValue1.visibility = if (isChecked) View.VISIBLE else View.GONE
-        tvClassificationValue2.visibility = if (isChecked) View.VISIBLE else View.GONE
-        tvClassificationValue3.visibility = if (isChecked) View.VISIBLE else View.GONE
+        cameraSource?.setDetector(MoveNet.create(this, device))
     }
 
     private fun requestPermission() {

@@ -78,6 +78,7 @@ class CameraSource(
     /** Squart 관련 Coroutine */
     private var squartJob : Job? = null
     private var squartPerson : Person? = null
+    private var isSquartMode = false
 
     suspend fun initCamera() {
         camera = openCamera(cameraManager, cameraId)
@@ -233,12 +234,7 @@ class CameraSource(
             }
         }
         frameProcessedInOneSecondInterval++
-        if (frameProcessedInOneSecondInterval == 1) {
-            // send fps to view
-            listener?.onFPSListener(framesPerSecond)
-        }
-        /* 이 listener를 조작해서 isStanding, isLower, isCorrect, isGoingUp 등의 상태를 조절해야...*/
-        listener?.onDetectedInfo(person?.score, classificationResult)
+
         person?.let {
             visualize(it, bitmap)
         }
@@ -302,22 +298,30 @@ class CameraSource(
     }
 
     interface CameraSourceListener {
-        fun onFPSListener(fps: Int)
+        //fun onFPSListener(fps: Int)
 
-        fun onDetectedInfo(personScore: Float?, poseLabels: List<Pair<String, Float>>?)
+        //fun onDetectedInfo(personScore: Float?, poseLabels: List<Pair<String, Float>>?)
+
+        fun onDetectPose(status: String)
     }
 
     private fun updatePose(): Job {
+        var standFlag = false
         return CoroutineScope(Dispatchers.IO).launch {
-
-            var standFlag = false
             while (true) {
                 if(squartPerson == null) break
-                if(EvaluateSquartUtils.isStanding(squartPerson!!)){
-                    if(!standFlag) standFlag = true
-                    else Log.d("UpdatePose", "isStanding!")
+                val now = EvaluateSquartUtils.evaluateSquartPosture(squartPerson!!, isSquartMode)
+                if(isSquartMode){
+                    listener?.onDetectPose(now)
                 }
-                else standFlag = false
+                else{
+                    if(now == "side"){
+                        if(!standFlag) standFlag = true
+                        else isSquartMode = true
+                    }
+                    else listener?.onDetectPose("$now standing")
+                }
+
                 delay(500)
             }
         }
