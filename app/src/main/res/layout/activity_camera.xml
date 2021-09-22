@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".CameraActivity">
 
     <SurfaceView
         android:id="@+id/surfaceView"
@@ -38,7 +38,7 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/exitButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="30dp"
@@ -57,7 +57,7 @@
         android:layout_marginBottom="10dp"
         android:text="Perfect: 1"
         android:textSize="20sp"
-        app:layout_constraintBottom_toTopOf="@+id/button"
+        app:layout_constraintBottom_toTopOf="@+id/exitButton"
         app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
@@ -68,6 +68,6 @@
         android:layout_marginBottom="10dp"
         android:text="Bad: 4"
         android:textSize="20sp"
-        app:layout_constraintBottom_toTopOf="@+id/button"
+        app:layout_constraintBottom_toTopOf="@+id/exitButton"
         app:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

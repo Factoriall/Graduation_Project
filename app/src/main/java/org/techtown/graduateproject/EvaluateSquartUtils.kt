@@ -9,7 +9,7 @@ import android.util.Log
 
 
 object EvaluateSquartUtils {
-    val horizontalJoints = listOf(
+    private val horizontalJoints = listOf(
         Pair(BodyPart.LEFT_SHOULDER, BodyPart.LEFT_HIP),
         Pair(BodyPart.RIGHT_SHOULDER, BodyPart.RIGHT_HIP),
         Pair(BodyPart.LEFT_HIP, BodyPart.LEFT_KNEE),
@@ -18,16 +18,16 @@ object EvaluateSquartUtils {
         Pair(BodyPart.RIGHT_KNEE, BodyPart.RIGHT_ANKLE)
     )
 
-    val verticalJoints = listOf(
+    private val verticalJoints = listOf(
         Pair(BodyPart.LEFT_SHOULDER, BodyPart.RIGHT_SHOULDER),
         Pair(BodyPart.LEFT_HIP, BodyPart.RIGHT_HIP)
     )
 
-    val leftLegJoints = listOf(
+    private val leftLegJoints = listOf(
         Pair(BodyPart.LEFT_HIP, BodyPart.LEFT_KNEE),
         Pair(BodyPart.LEFT_KNEE, BodyPart.LEFT_ANKLE)
     )
-    val rightLegJoints = listOf(
+    private val rightLegJoints = listOf(
         Pair(BodyPart.RIGHT_HIP, BodyPart.RIGHT_KNEE),
         Pair(BodyPart.RIGHT_KNEE, BodyPart.RIGHT_ANKLE)
     )
@@ -39,14 +39,26 @@ object EvaluateSquartUtils {
             val leftKnee = person.keyPoints[leftLegJoints[0].second.position].coordinate
             val leftAnkle = person.keyPoints[leftLegJoints[1].second.position].coordinate
 
-            val line1 = Pair<Double, Double>(
+            val line1 = Pair(
                 (leftHip.y - leftKnee.y).toDouble(),
                 (leftHip.x - leftKnee.x).toDouble())
-            val line2 = Pair<Double, Double>(
+            val line2 = Pair(
                 (leftAnkle.y - leftKnee.y).toDouble(),
                 (leftAnkle.x - leftKnee.x).toDouble())
-            val angle = angleBetween2Lines(line1, line2)
-            return angle.toString()
+            val angle1 = angleBetween2Lines(line1, line2)
+
+            val rightHip = person.keyPoints[rightLegJoints[0].first.position].coordinate
+            val rightKnee = person.keyPoints[rightLegJoints[0].second.position].coordinate
+            val rightAnkle = person.keyPoints[rightLegJoints[1].second.position].coordinate
+
+            val line11 = Pair(
+                (rightHip.y - rightKnee.y).toDouble(),
+                (rightHip.x - rightKnee.x).toDouble())
+            val line22 = Pair(
+                (rightAnkle.y - rightKnee.y).toDouble(),
+                (rightAnkle.x - rightKnee.x).toDouble())
+            val angle2 = angleBetween2Lines(line11, line22)
+            return "left: $angle1\nright: $angle2"
         }
     }
 
