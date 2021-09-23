@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/summary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/overall"
+        android:textSize="@dimen/title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/totalNumText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="20dp"
+        android:text="@string/totalNum"
+        android:textSize="@dimen/header"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/summary" />
+
+    <TextView
+        android:id="@+id/totalTimeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/totalTime"
+        android:textSize="@dimen/header"
+        app:layout_constraintStart_toStartOf="@+id/totalNumText"
+        app:layout_constraintTop_toBottomOf="@+id/totalNumText" />
+
+    <TextView
+        android:id="@+id/totalDayText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/totalDay"
+        android:textSize="@dimen/header"
+        app:layout_constraintStart_toStartOf="@+id/totalTimeText"
+        app:layout_constraintTop_toBottomOf="@+id/totalTimeText" />
+
+    <TextView
+        android:id="@+id/perfectPercentText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/perfectPercent"
+        android:textSize="@dimen/header"
+        app:layout_constraintStart_toStartOf="@+id/totalDayText"
+        app:layout_constraintTop_toBottomOf="@+id/totalDayText" />
+
+    <TextView
+        android:id="@+id/totalNumValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:text="1회"
+        android:textSize="@dimen/header"
+        app:layout_constraintBottom_toBottomOf="@+id/totalNumText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/totalNumText" />
+
+    <TextView
+        android:id="@+id/totalTimeValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:text="00:30:00"
+        android:textSize="@dimen/header"
+        app:layout_constraintBottom_toBottomOf="@+id/totalTimeText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/totalTimeText" />
+
+    <TextView
+        android:id="@+id/totalDayValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:text="30일"
+        android:textSize="@dimen/header"
+        app:layout_constraintBottom_toBottomOf="@+id/totalDayText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/totalDayText" />
+
+    <TextView
+        android:id="@+id/percentPercentValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:text="97%"
+        android:textSize="@dimen/header"
+        app:layout_constraintBottom_toBottomOf="@+id/perfectPercentText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/perfectPercentText" />
+</androidx.constraintlayout.widget.ConstraintLayout>
