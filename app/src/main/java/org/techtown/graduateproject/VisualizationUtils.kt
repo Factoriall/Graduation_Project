@@ -63,7 +63,7 @@ object VisualizationUtils {
     }
 
     //필요없는 데이터: 0-4, 7-10
-    fun isUnnecessaryData(point : Int) : Boolean{
+    private fun isUnnecessaryData(point : Int) : Boolean{
         if(point == 0
             || point == 1
             || point == 2

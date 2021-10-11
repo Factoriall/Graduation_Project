@@ -19,27 +19,25 @@ package org.techtown.graduateproject
 import android.Manifest
 import android.app.AlertDialog
 import android.app.Dialog
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Process
+import android.os.SystemClock
 import android.view.SurfaceView
-import android.view.View
 import android.view.WindowManager
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.techtown.graduateproject.camera.CameraSource
 import org.techtown.graduateproject.data.Device
-import org.techtown.graduateproject.ml.ModelType
 import org.techtown.graduateproject.ml.MoveNet
-import org.techtown.graduateproject.ml.PoseClassifier
-import org.techtown.graduateproject.ml.PoseNet
 
 class CameraActivity : AppCompatActivity() {
     companion object {
@@ -49,18 +47,18 @@ class CameraActivity : AppCompatActivity() {
     /** A [SurfaceView] for camera preview.   */
     private lateinit var surfaceView: SurfaceView
 
-    /** Default pose estimation model is 1 (MoveNet Thunder)
-     * 0 == MoveNet Lightning model
-     * 1 == MoveNet Thunder model
-     * 2 == PoseNet model
-     **/
-    private var modelPos = 1
-
     /** Default device is GPU */
     private var device = Device.CPU
 
     private lateinit var statusText: TextView
+    private lateinit var perfectValue : TextView
+    private lateinit var badValue : TextView
+    private lateinit var timer : Chronometer
     private var cameraSource: CameraSource? = null
+    private var perfectCnt = 0
+    private var badCnt = 0
+    private var timeWhenStopped: Long = 0
+    private var isTimerRunning = false
     private val requestPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
@@ -89,10 +87,19 @@ class CameraActivity : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         surfaceView = findViewById(R.id.surfaceView)
         statusText = findViewById(R.id.statusText)
+        perfectValue = findViewById(R.id.perfectValue)
+        perfectValue.text = perfectCnt.toString()
+        badValue = findViewById(R.id.badValue)
+        badValue.text = badCnt.toString()
+        timer = findViewById(R.id.timer)
 
         val exitButton = findViewById<Button>(R.id.exitButton)
         exitButton.setOnClickListener {
-            setResult(RESULT_OK)
+            val ret = Intent()
+            ret.putExtra("time", -timeWhenStopped)
+            ret.putExtra("perfect", perfectCnt)
+            ret.putExtra("bad", badCnt)
+            setResult(RESULT_OK, ret)
             finish()
         }
 
@@ -113,6 +120,7 @@ class CameraActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        cameraSource?.stopUpdatePose()
         cameraSource?.close()
         cameraSource = null
         super.onPause()
@@ -133,12 +141,50 @@ class CameraActivity : AppCompatActivity() {
             if (cameraSource == null) {
                 cameraSource =
                     CameraSource(surfaceView, object : CameraSource.CameraSourceListener {
-
-
-                        override fun onDetectPose(s: String){
-                            statusText.text = s
+                        override fun onDetectPose(status: String){
+                            statusText.text = status
                         }
 
+                        override suspend fun onCountUpPerfect() {
+                            perfectCnt += 1
+                            withContext(Dispatchers.Main) {
+                                perfectValue.text = perfectCnt.toString()
+                            }
+                        }
+
+                        override suspend fun onCountDownPerfect() {
+                            perfectCnt -= 1
+                            withContext(Dispatchers.Main) {
+                                perfectValue.text = perfectCnt.toString()
+                            }
+                        }
+
+                        override suspend fun onCountUpBad() {
+                            badCnt += 1
+                            withContext(Dispatchers.Main) {
+                                badValue.text = badCnt.toString()
+                            }
+                        }
+
+                        override suspend fun onResumeTimer() {
+                            withContext(Dispatchers.Main) {
+                                if (!isTimerRunning) {
+                                    timer.base = SystemClock.elapsedRealtime() + timeWhenStopped
+                                    timer.start()
+                                    isTimerRunning = true
+                                }
+                            }
+                        }
+
+                        override suspend fun onPauseTimer() {
+                            withContext(Dispatchers.Main) {
+                                if (isTimerRunning) {
+                                    timeWhenStopped = timer.base - SystemClock.elapsedRealtime()
+                                    timer.stop()
+                                    isTimerRunning = false
+                                }
+                            }
+                        }
                     }).apply {
                         prepareCamera()
                     }
@@ -148,18 +194,6 @@ class CameraActivity : AppCompatActivity() {
             }
             createPoseEstimator()
         }
-    }
-
-    private fun convertPoseLabels(pair: Pair<String, Float>?): String {
-        if (pair == null) return "empty"
-        return "${pair.first} (${String.format("%.2f", pair.second)})"
-    }
-
-    // change model when app is running
-    private fun changeModel(position: Int) {
-        if (modelPos == position) return
-        modelPos = position
-        createPoseEstimator()
     }
 
 
@@ -190,7 +224,6 @@ class CameraActivity : AppCompatActivity() {
      * Shows an error message dialog.
      */
     class ErrorDialog : DialogFragment() {
-
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
             AlertDialog.Builder(activity)
                 .setMessage(requireArguments().getString(ARG_MESSAGE))
@@ -200,7 +233,6 @@ class CameraActivity : AppCompatActivity() {
                 .create()
 
         companion object {
-
             @JvmStatic
             private val ARG_MESSAGE = "message"
 
@@ -210,4 +242,6 @@ class CameraActivity : AppCompatActivity() {
             }
         }
     }
+
+    override fun onBackPressed() {}
 }

@@ -176,16 +176,6 @@ class CameraSource(
         }
     }
 
-    fun setClassifier(classifier: PoseClassifier?) {
-        synchronized(lock) {
-            if (this.classifier != null) {
-                this.classifier?.close()
-                this.classifier = null
-            }
-            this.classifier = classifier
-        }
-    }
-
     fun resume() {
         imageReaderThread = HandlerThread("imageReaderThread").apply { start() }
         imageReaderHandler = Handler(imageReaderThread!!.looper)
@@ -243,15 +233,13 @@ class CameraSource(
     private fun visualize(person: Person, bitmap: Bitmap) {
         var outputBitmap = bitmap
 
-        if (person.score > MIN_CONFIDENCE) {
+        if (person.score >= MIN_CONFIDENCE) {
             outputBitmap = VisualizationUtils.drawBodyKeypoints(bitmap, person)
             squartPerson = person
             if(squartJob == null) squartJob = updatePose()
         }
         else{
-            squartJob?.cancel()
-            squartJob = null
-            squartPerson = null
+            stopUpdatePose()
         }
 
         val holder = surfaceView.holder
@@ -297,21 +285,109 @@ class CameraSource(
         }
     }
 
+    fun stopUpdatePose(){
+        Log.d("updatePose", "stop")
+        squartJob?.cancel()
+        squartJob = null
+        squartPerson = null
+    }
+
     interface CameraSourceListener {
-        //fun onFPSListener(fps: Int)
-
-        //fun onDetectedInfo(personScore: Float?, poseLabels: List<Pair<String, Float>>?)
-
         fun onDetectPose(status: String)
+        suspend fun onCountUpPerfect()
+        suspend fun onCountDownPerfect()
+        suspend fun onCountUpBad()
+        suspend fun onResumeTimer()
+        suspend fun onPauseTimer()
     }
 
     private fun updatePose(): Job {
         var standFlag = false
+        var isStand = true
+        var isPerfect = false
+        var isBad = false
+        var prev = "stand"
         return CoroutineScope(Dispatchers.IO).launch {
-            while (true) {
+            while (camera != null) {
                 if(squartPerson == null) break
                 val now = EvaluateSquartUtils.evaluateSquartPosture(squartPerson!!, isSquartMode)
+                Log.d("updatePose", now)
                 if(isSquartMode){
+                    when(prev){
+                        "stand" -> {
+                            when (now) {
+                                "stand" -> {
+                                    listener?.onPauseTimer()
+                                }
+                                "mid" -> {
+                                    listener?.onResumeTimer()
+                                }
+                                "sit" -> {
+                                    isPerfect = true
+                                    isStand = false
+                                    listener?.onCountUpPerfect()
+                                    listener?.onResumeTimer()
+                                }
+                                "badSit" -> {
+                                    isBad = true
+                                    isStand = false
+                                    listener?.onCountUpBad()
+                                    listener?.onResumeTimer()
+                                }
+                            }
+                        }
+                        "mid" -> {
+                            when (now) {
+                                "stand" -> {
+                                    isStand = true
+                                    isPerfect = false
+                                    isBad = false
+                                }
+                                "sit" ->{
+                                    if(!isPerfect && isStand) {
+                                        listener?.onCountUpPerfect()
+                                        isPerfect = true
+                                    }
+                                    else if(!isBad && !isStand){
+                                        listener?.onCountUpBad()
+                                        isBad = true
+                                    }
+                                }
+                                "badSit" -> {
+                                    if(!isBad){
+                                        listener?.onCountUpBad()
+                                        isBad = true
+                                    }
+                                }
+                            }
+                        }
+                        "sit" -> {
+                            when (now) {
+                                "stand" -> {
+                                    isStand = true
+                                    isPerfect = false
+                                    isBad = false
+                                }
+                                "badSit" -> {
+                                    if(!isBad){
+                                        listener?.onCountDownPerfect()
+                                        listener?.onCountUpBad()
+                                        isBad = true
+                                    }
+                                }
+                            }
+                        }
+                        "badSit" -> {
+                            when (now) {
+                                "stand" -> {
+                                    isStand = true
+                                    isPerfect = false
+                                    isBad = false
+                                }
+                            }
+                        }
+                    }
+                    prev = now
                     listener?.onDetectPose(now)
                 }
                 else{
@@ -319,7 +395,11 @@ class CameraSource(
                         if(!standFlag) standFlag = true
                         else isSquartMode = true
                     }
-                    else listener?.onDetectPose("$now standing")
+                    else{
+                        isSquartMode = false
+                    }
+                    listener?.onPauseTimer()
+                    listener?.onDetectPose("$now standing")
                 }
 
                 delay(500)

@@ -27,7 +27,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
+    <Chronometer
         android:id="@+id/timer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -55,7 +55,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="30dp"
         android:layout_marginBottom="10dp"
-        android:text="Perfect: 1"
+        android:text="Perfect:"
         android:textSize="20sp"
         app:layout_constraintBottom_toTopOf="@+id/exitButton"
         app:layout_constraintStart_toStartOf="parent" />
@@ -64,10 +64,28 @@
         android:id="@+id/badText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="30dp"
         android:layout_marginBottom="10dp"
-        android:text="Bad: 4"
+        android:text="Bad:"
         android:textSize="20sp"
         app:layout_constraintBottom_toTopOf="@+id/exitButton"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toStartOf="@+id/badValue" />
+
+    <TextView
+        android:id="@+id/perfectValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@+id/perfectText"
+        app:layout_constraintStart_toEndOf="@+id/perfectText"
+        app:layout_constraintTop_toTopOf="@+id/perfectText" />
+
+    <TextView
+        android:id="@+id/badValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@+id/badText"
+        app:layout_constraintEnd_toEndOf="@+id/exitButton"
+        app:layout_constraintTop_toTopOf="@+id/badText" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,11 +1,10 @@
 package org.techtown.graduateproject
 
-import android.graphics.Bitmap
-import android.graphics.PointF
 import org.techtown.graduateproject.data.BodyPart
 import org.techtown.graduateproject.data.Person
 
-import android.util.Log
+import kotlin.math.abs
+import kotlin.math.atan2
 
 
 object EvaluateSquartUtils {
@@ -32,34 +31,46 @@ object EvaluateSquartUtils {
         Pair(BodyPart.RIGHT_KNEE, BodyPart.RIGHT_ANKLE)
     )
 
+    private val sideLimit = 50
+
     fun evaluateSquartPosture(person: Person, isSquartMode: Boolean): String{
-        if(!isSquartMode) return isSideStanding(person)
+        if(!isSquartMode || !isSide(person)) return isSideStanding(person)
         else{
-            val leftHip = person.keyPoints[leftLegJoints[0].first.position].coordinate
-            val leftKnee = person.keyPoints[leftLegJoints[0].second.position].coordinate
-            val leftAnkle = person.keyPoints[leftLegJoints[1].second.position].coordinate
+            val angleLeftFloor = getAngleBetweenFloor(person, leftLegJoints)
+            val angleRightFloor = getAngleBetweenFloor(person, rightLegJoints)
+            if(angleLeftFloor < 50 || angleRightFloor < 50) return "badSit"
 
-            val line1 = Pair(
-                (leftHip.y - leftKnee.y).toDouble(),
-                (leftHip.x - leftKnee.x).toDouble())
-            val line2 = Pair(
-                (leftAnkle.y - leftKnee.y).toDouble(),
-                (leftAnkle.x - leftKnee.x).toDouble())
-            val angle1 = angleBetween2Lines(line1, line2)
+            val angleLeft = getAngleOfLegs(person ,leftLegJoints)
+            val angleRight = getAngleOfLegs(person, rightLegJoints)
 
-            val rightHip = person.keyPoints[rightLegJoints[0].first.position].coordinate
-            val rightKnee = person.keyPoints[rightLegJoints[0].second.position].coordinate
-            val rightAnkle = person.keyPoints[rightLegJoints[1].second.position].coordinate
-
-            val line11 = Pair(
-                (rightHip.y - rightKnee.y).toDouble(),
-                (rightHip.x - rightKnee.x).toDouble())
-            val line22 = Pair(
-                (rightAnkle.y - rightKnee.y).toDouble(),
-                (rightAnkle.x - rightKnee.x).toDouble())
-            val angle2 = angleBetween2Lines(line11, line22)
-            return "left: $angle1\nright: $angle2"
+            if(angleLeft < 110 && angleRight < 110) return "sit"
+            else if(angleLeft > 150 && angleRight > 150) return "stand"
+            return "mid"
         }
+    }
+
+    private fun getAngleBetweenFloor(person: Person, legJoints: List<Pair<BodyPart, BodyPart>>): Double{
+        val knee = person.keyPoints[legJoints[1].first.position].coordinate
+        val ankle = person.keyPoints[legJoints[1].second.position].coordinate
+
+        val line1 = Pair(
+            (knee.y - ankle.y).toDouble(),
+            (knee.x - ankle.x).toDouble())
+        return angleBetween2Lines(line1, Pair(0.toDouble(), 1.toDouble()) )
+    }
+
+    private fun getAngleOfLegs(person: Person, legJoints: List<Pair<BodyPart, BodyPart>>): Double {
+        val hip = person.keyPoints[legJoints[0].first.position].coordinate
+        val knee = person.keyPoints[legJoints[0].second.position].coordinate
+        val ankle = person.keyPoints[legJoints[1].second.position].coordinate
+
+        val line1 = Pair(
+            (hip.y - knee.y).toDouble(),
+            (hip.x - knee.x).toDouble())
+        val line2 = Pair(
+            (ankle.y - knee.y).toDouble(),
+            (ankle.x - knee.x).toDouble())
+        return angleBetween2Lines(line1, line2)
     }
 
     fun isSideStanding(person: Person) : String{
@@ -67,27 +78,44 @@ object EvaluateSquartUtils {
         horizontalJoints.forEach {
             val pointA = person.keyPoints[it.first.position].coordinate
             val pointB = person.keyPoints[it.second.position].coordinate
-            if(Math.abs(pointA.x - pointB.x) >= limit) return "not"
+            if(abs(pointA.x - pointB.x) >= limit) return "not"
         }
 
-        verticalJoints.forEach {
+        var idx = 0
+        horizontalJoints.forEach {
             val pointA = person.keyPoints[it.first.position].coordinate
             val pointB = person.keyPoints[it.second.position].coordinate
-            if(Math.abs(pointA.x - pointB.x) >= limit) return "straight"
+            val lmt = if(idx < 2) 100 else 50
+            if(abs(pointA.y - pointB.y) < lmt) return "not"
+            idx++
         }
+
+        if(!isSide(person)) return "straight"
 
         return "side"
     }
 
-    fun angleBetween2Lines(line1: Pair<Double, Double>, line2: Pair<Double, Double>): Double {
-        val angle1: Double = Math.atan2(
+    private fun isSide(person: Person): Boolean{
+        verticalJoints.forEach {
+            val pointA = person.keyPoints[it.first.position].coordinate
+            val pointB = person.keyPoints[it.second.position].coordinate
+            if(abs(pointA.x - pointB.x) >= sideLimit) return false
+        }
+        return true
+    }
+
+    private fun angleBetween2Lines(line1: Pair<Double, Double>, line2: Pair<Double, Double>): Double {
+        val angle1: Double = atan2(
             line1.first,
             line1.second
         )
-        val angle2: Double = Math.atan2(
+        val angle2: Double = atan2(
             line2.first,
             line2.second
         )
-        return angle1 - angle2
+        val angle = abs(angle1 - angle2) * 180 / Math.PI
+
+        return if(angle >= 180) 360 - angle
+        else angle
     }
 }
