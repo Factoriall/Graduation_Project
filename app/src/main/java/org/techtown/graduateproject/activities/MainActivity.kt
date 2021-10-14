@@ -1,13 +1,17 @@
-package org.techtown.graduateproject
+package org.techtown.graduateproject.activities
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import org.techtown.graduateproject.AppDatabase
+import org.techtown.graduateproject.R
+import org.techtown.graduateproject.fragments.RecordFragment
+import org.techtown.graduateproject.fragments.TimerFragment
 
 class MainActivity: AppCompatActivity() {
-    private val timerFragment by lazy {TimerFragment()}
-    private val recordFragment by lazy {RecordFragment()}
+    private val timerFragment by lazy { TimerFragment() }
+    private val recordFragment by lazy { RecordFragment() }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)

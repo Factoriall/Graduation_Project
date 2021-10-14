@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.techtown.graduateproject
+package org.techtown.graduateproject.activities
 
 import android.Manifest
 import android.app.AlertDialog
@@ -24,6 +24,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Process
 import android.os.SystemClock
+import android.util.Log
 import android.view.SurfaceView
 import android.view.WindowManager
 import android.widget.*
@@ -34,10 +35,15 @@ import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.techtown.graduateproject.AppDatabase
+import org.techtown.graduateproject.DayRecord
+import org.techtown.graduateproject.R
 import org.techtown.graduateproject.camera.CameraSource
 import org.techtown.graduateproject.data.Device
 import org.techtown.graduateproject.ml.MoveNet
+import java.util.*
 
 class CameraActivity : AppCompatActivity() {
     companion object {
@@ -54,11 +60,11 @@ class CameraActivity : AppCompatActivity() {
     private lateinit var perfectValue : TextView
     private lateinit var badValue : TextView
     private lateinit var timer : Chronometer
+    private var todayRecord : DayRecord? = null
     private var cameraSource: CameraSource? = null
     private var perfectCnt = 0
     private var badCnt = 0
     private var timeWhenStopped: Long = 0
-    private var isTimerRunning = false
     private val requestPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
@@ -87,15 +93,42 @@ class CameraActivity : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         surfaceView = findViewById(R.id.surfaceView)
         statusText = findViewById(R.id.statusText)
+        val db = AppDatabase.getInstance(this)!!
+        val cal = Calendar.getInstance()
+        cal.time = Date()
+        val year = cal.get(Calendar.YEAR)
+        val month = cal.get(Calendar.MONTH)
+        val day = cal.get(Calendar.DAY_OF_MONTH)
+        runBlocking {
+            todayRecord = db.dayRecordDao().findByDate(year, month, day)
+            if(todayRecord != null) {
+                perfectCnt = todayRecord!!.perfect
+                badCnt = todayRecord!!.bad
+                timeWhenStopped = -todayRecord!!.time
+            }
+        }
         perfectValue = findViewById(R.id.perfectValue)
         perfectValue.text = perfectCnt.toString()
         badValue = findViewById(R.id.badValue)
         badValue.text = badCnt.toString()
         timer = findViewById(R.id.timer)
+        timer.base = SystemClock.elapsedRealtime() + timeWhenStopped
 
         val exitButton = findViewById<Button>(R.id.exitButton)
         exitButton.setOnClickListener {
             val ret = Intent()
+            runBlocking {
+                if(todayRecord != null) {
+                    todayRecord!!.bad = badCnt
+                    todayRecord!!.perfect = perfectCnt
+                    todayRecord!!.time = -timeWhenStopped
+                    db.dayRecordDao().update(todayRecord!!)
+                }
+                else if(timeWhenStopped != 0.toLong()){
+                    db.dayRecordDao().insert(DayRecord(year, month, day,
+                        perfectCnt, badCnt, -timeWhenStopped))
+                }
+            }
             ret.putExtra("time", -timeWhenStopped)
             ret.putExtra("perfect", perfectCnt)
             ret.putExtra("bad", badCnt)
@@ -123,6 +156,7 @@ class CameraActivity : AppCompatActivity() {
         cameraSource?.stopUpdatePose()
         cameraSource?.close()
         cameraSource = null
+
         super.onPause()
     }
 
@@ -168,21 +202,17 @@ class CameraActivity : AppCompatActivity() {
 
                         override suspend fun onResumeTimer() {
                             withContext(Dispatchers.Main) {
-                                if (!isTimerRunning) {
-                                    timer.base = SystemClock.elapsedRealtime() + timeWhenStopped
-                                    timer.start()
-                                    isTimerRunning = true
-                                }
+                                Log.d("cameraActivity", "resumeTimer")
+                                timer.base = SystemClock.elapsedRealtime() + timeWhenStopped
+                                timer.start()
                             }
                         }
 
                         override suspend fun onPauseTimer() {
                             withContext(Dispatchers.Main) {
-                                if (isTimerRunning) {
-                                    timeWhenStopped = timer.base - SystemClock.elapsedRealtime()
-                                    timer.stop()
-                                    isTimerRunning = false
-                                }
+                                Log.d("cameraActivity", "pauseTimer")
+                                timeWhenStopped = timer.base - SystemClock.elapsedRealtime()
+                                timer.stop()
                             }
                         }
                     }).apply {

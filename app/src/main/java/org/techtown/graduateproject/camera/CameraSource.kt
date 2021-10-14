@@ -301,38 +301,55 @@ class CameraSource(
         suspend fun onPauseTimer()
     }
 
+
+
     private fun updatePose(): Job {
         var standFlag = false
         var isStand = true
         var isPerfect = false
         var isBad = false
         var prev = "stand"
+        var isCounting = false
+
         return CoroutineScope(Dispatchers.IO).launch {
             while (camera != null) {
                 if(squartPerson == null) break
                 val now = EvaluateSquartUtils.evaluateSquartPosture(squartPerson!!, isSquartMode)
-                Log.d("updatePose", now)
                 if(isSquartMode){
                     when(prev){
+                        "not", "side", "straight" -> isSquartMode = false
                         "stand" -> {
                             when (now) {
                                 "stand" -> {
-                                    listener?.onPauseTimer()
+                                    if(isCounting) {
+                                        Log.d("cameraSource","pauseTimer in squartMode")
+                                        listener?.onPauseTimer()
+                                        isCounting = false
+                                    }
                                 }
                                 "mid" -> {
-                                    listener?.onResumeTimer()
+                                    if(!isCounting) {
+                                        listener?.onResumeTimer()
+                                        isCounting = true
+                                    }
                                 }
                                 "sit" -> {
                                     isPerfect = true
                                     isStand = false
                                     listener?.onCountUpPerfect()
-                                    listener?.onResumeTimer()
+                                    if(!isCounting) {
+                                        listener?.onResumeTimer()
+                                        isCounting = true
+                                    }
                                 }
                                 "badSit" -> {
                                     isBad = true
                                     isStand = false
                                     listener?.onCountUpBad()
-                                    listener?.onResumeTimer()
+                                    if(!isCounting) {
+                                        listener?.onResumeTimer()
+                                        isCounting = true
+                                    }
                                 }
                             }
                         }
@@ -391,14 +408,18 @@ class CameraSource(
                     listener?.onDetectPose(now)
                 }
                 else{
+                    if(isCounting) {
+                        Log.d("cameraSource","pauseTimer")
+                        listener?.onPauseTimer()
+                        isCounting = false
+                    }
+
+
                     if(now == "side"){
                         if(!standFlag) standFlag = true
                         else isSquartMode = true
                     }
-                    else{
-                        isSquartMode = false
-                    }
-                    listener?.onPauseTimer()
+                    else isSquartMode = false
                     listener?.onDetectPose("$now standing")
                 }
 

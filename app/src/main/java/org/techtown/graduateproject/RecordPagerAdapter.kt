@@ -4,6 +4,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import org.techtown.graduateproject.fragments.RecordHistoryFragment
+import org.techtown.graduateproject.fragments.RecordOverallFragment
 
 class RecordPagerAdapter(fm: FragmentManager, lifecycle: Lifecycle) : FragmentStateAdapter(fm, lifecycle) {
     override fun getItemCount(): Int {

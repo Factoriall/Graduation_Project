@@ -5,6 +5,8 @@
     <string name="zero_time">00:00:00</string>
     <string name="timerTab">오늘 기록</string>
     <string name="recordTab">전체 기록</string>
+    <string name="perfect">완벽: </string>
+    <string name="bad">불량: </string>
 
     <!-- record_overall 관련 -->
     <string name="overall">요약</string>

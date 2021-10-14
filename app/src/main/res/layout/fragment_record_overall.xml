@@ -91,7 +91,7 @@
         app:layout_constraintTop_toTopOf="@+id/totalDayText" />
 
     <TextView
-        android:id="@+id/percentPercentValue"
+        android:id="@+id/perfectPercentValue"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"

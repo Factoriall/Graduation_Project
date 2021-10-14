@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CameraActivity">
+    tools:context=".activities.CameraActivity">
 
     <SurfaceView
         android:id="@+id/surfaceView"
@@ -55,8 +55,8 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="30dp"
         android:layout_marginBottom="10dp"
-        android:text="Perfect:"
-        android:textSize="20sp"
+        android:text="@string/perfect"
+        android:textSize="24sp"
         app:layout_constraintBottom_toTopOf="@+id/exitButton"
         app:layout_constraintStart_toStartOf="parent" />
 
@@ -65,8 +65,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
-        android:text="Bad:"
-        android:textSize="20sp"
+        android:text="@string/bad"
+        android:textSize="24sp"
         app:layout_constraintBottom_toTopOf="@+id/exitButton"
         app:layout_constraintEnd_toStartOf="@+id/badValue" />
 
@@ -75,7 +75,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="5dp"
-        android:textSize="20sp"
+        android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="@+id/perfectText"
         app:layout_constraintStart_toEndOf="@+id/perfectText"
         app:layout_constraintTop_toTopOf="@+id/perfectText" />
@@ -84,7 +84,7 @@
         android:id="@+id/badValue"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="20sp"
+        android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="@+id/badText"
         app:layout_constraintEnd_toEndOf="@+id/exitButton"
         app:layout_constraintTop_toTopOf="@+id/badText" />
