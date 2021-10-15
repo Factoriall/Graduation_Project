@@ -7,6 +7,7 @@
     <string name="recordTab">전체 기록</string>
     <string name="perfect">완벽: </string>
     <string name="bad">불량: </string>
+    <string name="perfect_percent">완벽률: </string>
 
     <!-- record_overall 관련 -->
     <string name="overall">요약</string>
