@@ -32,7 +32,6 @@ class RecordHistoryFragment: Fragment() {
         recyclerView.layoutManager = linearLayoutManager
         recyclerView.adapter = RecordHistoryRecyclerAdapter(recordList)
 
-
         return view
     }
 }

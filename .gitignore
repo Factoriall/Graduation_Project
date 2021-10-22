@@ -2,7 +2,7 @@
 *.apk
 *.ap_
 *.aab
-app-release.zip
+*.zip
                            
 # files for the dex VM
 *.dex
